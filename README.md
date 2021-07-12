@@ -4,4 +4,4 @@ Arduino library that makes the *Klang* library available as an *audio object* in
 
 ## Installation
 
-copy the contents of this repository to Arduino library folder. note, that there might be unwanted interaction when using *Klangstrom* while this library is installed. it is adviced to uninstall this library when working with *Klangstrom* boards.
+copy the contents of a release ( or this repository ) to Arduino library folder. note, that there might be unwanted interactions when using *Klangstrom* boards while this library is installed. it is adviced to temporarily uninstall this library when working with *Klangstrom* boards.
