@@ -5,9 +5,6 @@ KLST_ARDUINO_SRC_PATH=../klangstrom/klangstrom/platforms/klangstrom-arduino/libr
 M_SRC_PATH=src
 M_TEMPLATE_PATH=template
 
-echo 
-echo "###"
-echo "### +++ Klang Teensy Audio Library +++ "
 echo "###"
 echo "### cleaning up source folder"
 
@@ -29,4 +26,3 @@ echo "### copying template files"
 cp -r "$M_TEMPLATE_PATH"/ "$M_SRC_PATH"
 
 echo "###"
-echo
