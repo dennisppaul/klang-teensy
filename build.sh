@@ -7,6 +7,8 @@ M_TEMPLATE_PATH=template
 
 echo 
 echo "###"
+echo "### +++ Klang Teensy Audio Library +++ "
+echo "###"
 echo "### cleaning up source folder"
 
 if [ -d "$M_SRC_PATH" ]; then
