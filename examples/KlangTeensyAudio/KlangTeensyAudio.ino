@@ -10,7 +10,10 @@
 
 #define KLANG_EXT_NODE_REVERB
 #include <KlangTeensy.h>
-#include <Nodes.hpp>
+#include <NodeADSR.hpp>
+#include <NodeVCOFunction.hpp>
+#include <NodeReverb.hpp>
+#include <NodeDAC.hpp>
 
 using namespace klang;
 
