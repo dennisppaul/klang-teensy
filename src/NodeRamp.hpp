@@ -1,9 +1,21 @@
-//
-//  NodeRamp.hpp
-//  Klang – a node+text-based synthesizer library
-//
-//
-//
+/*
+ * Klang – a node+text-based synthesizer library
+ *
+ * This file is part of the *wellen* library (https://github.com/dennisppaul/wellen).
+ * Copyright (c) 2022 Dennis P Paul.
+ *
+ * This library is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /**
  *       [ NODE_RAMP           ]
@@ -13,12 +25,12 @@
  *       |             TRIGGER |--OUT01
  *       |                     |
  *       +---------------------+
- * 
+ *
  *       @description(
  *          the ramp’s duration, start and end value can be specified. however, the ramping process
  *          only starts when the `start()` function is called. if duration, start and end values
  *          are changed during ramping the ramping behavior changes. if the same values are changed
- *          while the ramp is not ramping no behavior change occurs until the `start()` function is 
+ *          while the ramp is not ramping no behavior change occurs until the `start()` function is
  *          called.
  *       )
  *
@@ -210,10 +222,8 @@ namespace klang {
         }
 
         void recompute_delta() {
-            const float mDeltaTotal       = mDestination - mStart;
-            const float mDelta            = mDestination - mCurrentValue;
-            const float mDurationFraction = mDuration * (mDelta / mDeltaTotal);
-            mDeltaFraction                = compute_delta_fraction(mDelta, mDurationFraction);
+            const float mDelta = mDestination - mStart;
+            mDeltaFraction     = compute_delta_fraction(mDelta, mDuration);
         }
 
         static constexpr SIGNAL_TYPE RAMP_NO_EDGE      = 0.0;

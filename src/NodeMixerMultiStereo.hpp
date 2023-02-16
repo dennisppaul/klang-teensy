@@ -1,9 +1,21 @@
-//
-//  NodeMixerMultiStereo.hpp
-//  Klang – a node+text-based synthesizer library
-//
-//
-//
+/*
+ * Klang – a node+text-based synthesizer library
+ *
+ * This file is part of the *wellen* library (https://github.com/dennisppaul/wellen).
+ * Copyright (c) 2022 Dennis P Paul.
+ *
+ * This library is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /**
  *       [ NODE_MIXER_MULTI_STEREO ]
@@ -55,7 +67,7 @@ namespace klang {
                 m_has_SIGNAL[i] = (mConnection_CH_IN_SIGNAL_and_mix[i].connection != nullptr);
                 mSignalInputCounter += m_has_SIGNAL[i];
             }
-            if (is_not_updated() && pChannel == CH_OUT_SIGNAL && mSignalInputCounter > 0) {
+            if (is_not_updated() && mSignalInputCounter > 0) {
                 mBlock_CH_OUT_SIGNAL_LEFT                   = AudioBlockPool::instance().request();
                 mBlock_CH_OUT_SIGNAL_RIGHT                  = AudioBlockPool::instance().request();
                 SIGNAL_TYPE* mBlockData_CH_OUT_SIGNAL_LEFT  = AudioBlockPool::instance().data(mBlock_CH_OUT_SIGNAL_LEFT);
@@ -77,7 +89,6 @@ namespace klang {
                     }
                 }
 
-                const float mInverseSigCounter = 1.0 / mSignalInputCounter;
                 for (uint16_t i = 0; i < KLANG_SAMPLES_PER_AUDIO_BLOCK; ++i) {
                     float mSumL = 0.0;
                     float mSumR = 0.0;
@@ -90,8 +101,8 @@ namespace klang {
                             mSumR += s * pR;
                         }
                     }
-                    mBlockData_CH_OUT_SIGNAL_LEFT[i]  = mSumL * mInverseSigCounter;
-                    mBlockData_CH_OUT_SIGNAL_RIGHT[i] = mSumR * mInverseSigCounter;
+                    mBlockData_CH_OUT_SIGNAL_LEFT[i]  = mSumL * fMasterVolume;
+                    mBlockData_CH_OUT_SIGNAL_RIGHT[i] = mSumR * fMasterVolume;
                 }
 
                 for (uint8_t i = 0; i < mNumberOfChannels; ++i) {
@@ -121,6 +132,14 @@ namespace klang {
                     memset(pAudioBlock, 0.0, KLANG_SAMPLES_PER_AUDIO_BLOCK * sizeof(SIGNAL_TYPE));
                 }
             }
+        }
+
+        void set_master(SIGNAL_TYPE pValue) {
+            fMasterVolume = pValue;
+        }
+
+        SIGNAL_TYPE get_master() {
+            return fMasterVolume;
         }
 
         void set_mix(uint8_t pChannel, SIGNAL_TYPE pValue) {
@@ -160,6 +179,7 @@ namespace klang {
             SIGNAL_TYPE pan;
         };
         vector<MixConnectionStruct> mConnection_CH_IN_SIGNAL_and_mix;
+        SIGNAL_TYPE                 fMasterVolume = 1.0;
 
         void add_channel(uint32_t pChannel, Connection* pConnection) {
             if (pChannel >= mConnection_CH_IN_SIGNAL_and_mix.size()) {

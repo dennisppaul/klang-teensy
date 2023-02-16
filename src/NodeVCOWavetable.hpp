@@ -1,9 +1,21 @@
-//
-//  NodeVCOWavetable.hpp
-//  Klang – a node+text-based synthesizer library
-//
-//
-//
+/*
+ * Klang – a node+text-based synthesizer library
+ *
+ * This file is part of the *wellen* library (https://github.com/dennisppaul/wellen).
+ * Copyright (c) 2022 Dennis P Paul.
+ *
+ * This library is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /**
  *       [ NODE_VCO_WAVETABLE  ]
@@ -22,6 +34,7 @@
  *          signal at an audible frequency ( Voltage-Controlled Oscillator (`VCO`) ). however, a
  *          wavetable node can also be used to manipulate other parameters ( e.g the frequency
  *          of another wavetable node ) at slower speeds ( Low Frequency Oscillator (`LFO`) ).
+ *          note that the maximum size of a wavetable is 65536 samples.
  *       )
  *
  *       @set_value(FREQUENCY_F32,AMPLITUDE_F32,OFFSET_F32,WAVEFORM)
@@ -36,26 +49,30 @@
 
 #define OSCIL_F_BITS               16
 #define OSCIL_F_BITS_AS_MULTIPLIER 65536
-#define SCALE_WAVETABLE(x)         ((x) * ((1 << 15) - 1))
-#define Q_FRAC                     15
-#define FADD(a, b)                 ((a) + (b))
-#define FSUB(a, b)                 ((a) - (b))
-#define FMUL(a, b)                 (((a) * (b)) >> (Q_FRAC))
-#define FDIV(a, b)                 (((a) << (Q_FRAC)) / (b))
+// #define SCALE_WAVETABLE(x)         ((x) * ((1 << 15) - 1))
+#define Q_FRAC     15
+#define FADD(a, b) ((a) + (b))
+#define FSUB(a, b) ((a) - (b))
+#define FMUL(a, b) (((a) * (b)) >> (Q_FRAC))
+#define FDIV(a, b) (((a) << (Q_FRAC)) / (b))
 
 #elif (KLANG_SIGNAL_TYPE == SIGNAL_TYPE_FLOAT)
 
-#define SCALE_WAVETABLE(x) (x)
+// #define SCALE_WAVETABLE(x) (x)
 
 #endif
 
 namespace klang {
-    class NodeVCOWavetable : public Node {
+    template <class BUFFER_TYPE>
+    class NodeVCOWavetableT : public Node {
+        // class NodeVCOWavetable : public Node {
     public:
         static const CHANNEL_ID CH_IN_FREQ = 0;
         static const CHANNEL_ID CH_IN_AMP  = 1;
         static const CHANNEL_ID NUM_CH_IN  = 2;
         static const CHANNEL_ID NUM_CH_OUT = 1;
+
+        static const uint16_t WAVETABLE_SIZE_DEFAULT = 256;
 
         enum WAVEFORM {
             SINE = 0,
@@ -65,32 +82,40 @@ namespace klang {
             EXPONENT
         };
 
-        NodeVCOWavetable(uint16_t pBufferLength) : mBufferLength(pBufferLength) {
-            mWavetable   = new SIGNAL_TYPE[mBufferLength];  // @TODO(consider reusing wavetable where possible)
+        NodeVCOWavetableT(uint16_t pWavetableLength) : mWavetableLength(pWavetableLength) {
+            mWavetable   = new BUFFER_TYPE[mWavetableLength];  // @TODO(consider reusing wavetable where possible)
             mDeleteArray = true;
-            if (!isPowerOfTwo(pBufferLength)) {
+            if (!isPowerOfTwo(pWavetableLength)) {
                 KLANG_LOG_ERR("### warning wavetable length needs to be *power of two*");
             }
             set_frequency(OSC_DEFAULT_FREQUENCY);
             set_amplitude(OSC_DEFAULT_AMPLITUDE);
         }
 
-        NodeVCOWavetable() : NodeVCOWavetable(256) {}
+        NodeVCOWavetableT() : NodeVCOWavetableT(WAVETABLE_SIZE_DEFAULT) {}
 
-        NodeVCOWavetable(SIGNAL_TYPE* pWavetable, uint16_t pBufferLength) : mWavetable(pWavetable), mBufferLength(pBufferLength) {
+        NodeVCOWavetableT(BUFFER_TYPE* pWavetable, uint16_t pWavetableLength) : mWavetable(pWavetable), mWavetableLength(pWavetableLength) {
             mDeleteArray = false;
             set_frequency(OSC_DEFAULT_FREQUENCY);
             set_amplitude(OSC_DEFAULT_AMPLITUDE);
         }
 
-        NodeVCOWavetable(const NodeVCOWavetable& obj) : mBufferLength(obj.mBufferLength) {
+        NodeVCOWavetableT(const NodeVCOWavetableT& obj) : mWavetableLength(obj.mWavetableLength) {
             mDeleteArray = obj.mDeleteArray;
             mWavetable   = obj.mWavetable;
             set_frequency(obj.mFrequency);
             set_amplitude(obj.mAmplitude);
         }
 
-        ~NodeVCOWavetable() {
+        NodeVCOWavetableT& operator=(const NodeVCOWavetableT& obj) {
+            mDeleteArray = obj.mDeleteArray;
+            mWavetable   = obj.mWavetable;
+            set_frequency(obj.mFrequency);
+            set_amplitude(obj.mAmplitude);
+            return *this;
+        }
+
+        ~NodeVCOWavetableT() {
             if (mDeleteArray) {
                 delete[] mWavetable;
             }
@@ -118,8 +143,20 @@ namespace klang {
             return false;
         }
 
+        void set_wavetable(BUFFER_TYPE* pWavetable) {
+            mWavetable = pWavetable;
+        }
+
+        const BUFFER_TYPE* get_wavetable() {
+            return mWavetable;
+        }
+
+        const uint16_t get_wavetable_length() {
+            return mWavetableLength;
+        }
+
         void set_array_ptr(const uint16_t pArrayPtr) {
-            const uint16_t mLastIndex = mBufferLength - 1;
+            const uint16_t mLastIndex = mWavetableLength - 1;
             mArrayPtr                 = pArrayPtr > mLastIndex ? mLastIndex : pArrayPtr;
         }
 
@@ -140,7 +177,9 @@ namespace klang {
             }
         }
 
-        void static fill_wavetable(WAVEFORM pWaveform, SIGNAL_TYPE* pWavetable, const uint16_t pWavetableSize) {
+        void static fill_wavetable(WAVEFORM       pWaveform,
+                                   BUFFER_TYPE*   pWavetable,
+                                   const uint16_t pWavetableSize) {
             switch (pWaveform) {
                 case SINE: {
                     for (uint16_t i = 0; i < pWavetableSize; i++) {
@@ -209,21 +248,25 @@ namespace klang {
             fill_wavetable((WAVEFORM)pWaveform, wavetable_ptr(), wavetable_size());
         }
 
-        void wavetable_write(uint16_t pIndex, SIGNAL_TYPE pSample) {
+        void wavetable_write(uint16_t pIndex, BUFFER_TYPE pSample) {
             mWavetable[pIndex] = pSample;
         }
 
         uint16_t wavetable_size() {
-            return mBufferLength;
+            return mWavetableLength;
         }
 
-        SIGNAL_TYPE* wavetable_ptr() {
+        BUFFER_TYPE* wavetable_ptr() {
             return mWavetable;
         }
 
-        // void set_interpolate_samples(bool pInterpolateSamples) {
-        //     mInterpolateSamples = pInterpolateSamples;
-        // }
+        void set_interpolate_samples(bool pInterpolateSamples) {
+            fInterpolateSamples = pInterpolateSamples;
+        }
+
+        bool get_interpolate_samples() {
+            return fInterpolateSamples;
+        }
 
 #if (KLANG_SIGNAL_TYPE == SIGNAL_TYPE_INT16)
         /* +++++++++++++++++++++++++++++++++++++++++++++++++++ */
@@ -263,9 +306,8 @@ namespace klang {
         void set_frequency(SIGNAL_TYPE pFrequency) {
             if (mFrequency != pFrequency) {
                 mFrequency    = pFrequency;
-                const float a = (float)mBufferLength * KLANG_AUDIO_RATE_UINT16_INV;
-                // const float a = (float)M_BUFFER_LENGTH / (float)KLANG_AUDIO_RATE_UINT16;
-                mStepSize = mFrequency * a;  // @TODO maybe move this to constructor to do it only once
+                const float a = (float)mWavetableLength * KLANG_AUDIO_RATE_UINT16_INV;
+                mStepSize     = mFrequency * a;
             }
         }
 
@@ -312,15 +354,6 @@ namespace klang {
                     const uint16_t mIndex = ((phase_fractional >> OSCIL_F_BITS) & (M_BUFFER_LENGTH - 1));
                     mBlock[i]             = FADD(FMUL(mWavetable[mIndex], mAmpTmp), mOffset);
 #elif (KLANG_SIGNAL_TYPE == SIGNAL_TYPE_FLOAT)
-                    // if (mInterpolateSamples) {
-                    //     update_audioblock_f_interpolation(pAudioBlock,
-                    //                                       mBlockData_FREQ, mHasFreqBuffer,
-                    //                                       mBlockData_AMP,  mHasAmpBuffer);
-                    // } else {
-                    //     update_audioblock_f_no_interpolation(pAudioBlock,
-                    //                                          mBlockData_FREQ, mHasFreqBuffer,
-                    //                                          mBlockData_AMP,  mHasAmpBuffer);
-                    // }
                     /* frequency */
                     if (mHasFreqBuffer) {
                         set_frequency(mBlockData_FREQ[i]);
@@ -329,24 +362,17 @@ namespace klang {
                     mArrayPtr += mStepSize;
                     const uint16_t mInt   = (uint16_t)mArrayPtr;
                     const float    mFrac  = mArrayPtr - mInt;
-                    const uint16_t mIndex = mInt & (mBufferLength - 1);
+                    const uint16_t mIndex = mInt & (mWavetableLength - 1);
                     mArrayPtr             = mIndex + mFrac;
-#define KLST_WAVETABLE_INTERPOLATE_SAMPLES 1
-
-#if KLST_WAVETABLE_INTERPOLATE_SAMPLES == 1
-                    // if (mInterpolateSamples) {
-                    const uint16_t mIndexNext = (mIndex + 1) & (mBufferLength - 1);
-                    // const uint16_t mIndexNext = (mIndex + 1) % M_BUFFER_LENGTH; // slower ( STM32F446 == +3µs )
-                    const float r  = (1.0 - mFrac);
-                    const float a  = mWavetable[mIndex] * r;
-                    const float b  = mWavetable[mIndexNext] * mFrac;
-                    pAudioBlock[i] = a + b;
-                    // pAudioBlock[i] = mWavetable[mIndex] * (1.0 - mFrac) + mWavetable[mIndexNext] * mFrac; // slower ( STM32F446 == +540µs ) (!!!)
-                    // } else {
-#else
-                    pAudioBlock[i] = mWavetable[mIndex];
-                    // }
-#endif
+                    if (fInterpolateSamples) {
+                        const uint16_t mIndexNext = (mIndex + 1) & (mWavetableLength - 1);
+                        const float    r          = (1.0 - mFrac);
+                        const float    a          = SCALE_SAMPLE(mWavetable[mIndex]) * r;
+                        const float    b          = SCALE_SAMPLE(mWavetable[mIndexNext]) * mFrac;
+                        pAudioBlock[i]            = a + b;
+                    } else {
+                        pAudioBlock[i] = SCALE_SAMPLE(mWavetable[mIndex]);
+                    }
                     pAudioBlock[i] *= mHasAmpBuffer ? mBlockData_AMP[i] : mAmplitude;
                     pAudioBlock[i] += mOffset;
 #endif
@@ -364,6 +390,14 @@ namespace klang {
         }
 
     private:
+        inline float SCALE_SAMPLE(const BUFFER_TYPE pRawSample) {
+            return pRawSample;
+        }
+
+        inline static BUFFER_TYPE SCALE_WAVETABLE(const float pRawSample) {
+            return pRawSample;
+        }
+
 #if (KLANG_SIGNAL_TYPE == SIGNAL_TYPE_INT16)
         typedef int32_t WAVETABLE_t;
         WAVETABLE_t     phase_fractional;
@@ -381,16 +415,17 @@ namespace klang {
         float       mArrayPtr  = 0.0;
 
         void wrap_array_ptr() {
-            while (mArrayPtr >= mBufferLength) {
-                mArrayPtr -= mBufferLength;
+            while (mArrayPtr >= mWavetableLength) {
+                mArrayPtr -= mWavetableLength;
             }
         }
 #endif
 
-        SIGNAL_TYPE*           mWavetable;
-        uint16_t               mBufferLength;
-        bool                   mDeleteArray;
         static constexpr float KLANG_AUDIO_RATE_UINT16_INV = 1.0 / (float)KLANG_AUDIO_RATE_UINT16;
+        BUFFER_TYPE*           mWavetable;
+        const uint16_t         mWavetableLength;
+        bool                   mDeleteArray;
+        bool                   fInterpolateSamples = false;
 
         bool isPowerOfTwo(uint16_t x) {
             while (((x % 2) == 0) && x > 1) {
@@ -407,54 +442,68 @@ namespace klang {
 
         SIGNAL_TYPE mAmplitude = SIGNAL_MAX;
         SIGNAL_TYPE mOffset    = 0.0;
-        // bool mInterpolateSamples            = true;
-
-        // inline void update_audioblock_f_interpolation(SIGNAL_TYPE* pAudioBlock,
-        //                                        const SIGNAL_TYPE* pBlockData_FREQ, const bool pHasFreqBuffer,
-        //                                        const SIGNAL_TYPE* pBlockData_AMP,  const bool pHasAmpBuffer) {
-        //     for (uint16_t i=0; i < KLANG_SAMPLES_PER_AUDIO_BLOCK; i++) {
-        //         /* frequency */
-        //         if (pHasFreqBuffer) {
-        //             set_frequency(pBlockData_FREQ[i]);
-        //         }
-        //         /* wavetable */
-        //         mArrayPtr += mStepSize;
-        //         const uint16_t mInt = (uint16_t)mArrayPtr;
-        //         const float mFrac = mArrayPtr - mInt;
-        //         const uint16_t mIndex = mInt & (M_BUFFER_LENGTH - 1);
-        //         mArrayPtr = mIndex + mFrac;
-        //         const uint16_t mIndexNext = (mIndex + 1) & (M_BUFFER_LENGTH - 1);
-        //         // const uint16_t mIndexNext = (mIndex + 1) % M_BUFFER_LENGTH; // slower ( STM32F446 == +3µs )
-        //         const float r = (1.0 - mFrac);
-        //         const float a = mWavetable[mIndex] * r;
-        //         const float b = mWavetable[mIndexNext] * mFrac;
-        //         pAudioBlock[i] = a + b;
-        //         // pAudioBlock[i] = mWavetable[mIndex] * (1.0 - mFrac) + mWavetable[mIndexNext] * mFrac; // slower ( STM32F446 == +540µs ) (!!!)
-        //         pAudioBlock[i] *= pHasAmpBuffer ? pBlockData_AMP[i] : mAmplitude;
-        //         pAudioBlock[i] += mOffset;
-        //     }
-        // }
-
-        // inline void update_audioblock_f_no_interpolation(SIGNAL_TYPE* pAudioBlock,
-        //                                           const SIGNAL_TYPE* pBlockData_FREQ, const bool pHasFreqBuffer,
-        //                                           const SIGNAL_TYPE* pBlockData_AMP,  const bool pHasAmpBuffer) {
-        //     for (uint16_t i=0; i < KLANG_SAMPLES_PER_AUDIO_BLOCK; i++) {
-        //         /* frequency */
-        //         if (pHasFreqBuffer) {
-        //             set_frequency(pBlockData_FREQ[i]);
-        //         }
-        //         /* wavetable */
-        //         mArrayPtr += mStepSize;
-        //         const uint16_t mInt = (uint16_t)mArrayPtr;
-        //         const float mFrac = mArrayPtr - mInt;
-        //         const uint16_t mIndex = mInt & (M_BUFFER_LENGTH - 1);
-        //         mArrayPtr = mIndex + mFrac;
-        //         pAudioBlock[i] = mWavetable[mIndex];
-        //         pAudioBlock[i] *= pHasAmpBuffer ? pBlockData_AMP[i] : mAmplitude;
-        //         pAudioBlock[i] += mOffset;
-        //     }
-        // }
     };
+
+    template <>
+    float klang::NodeVCOWavetableT<uint8_t>::SCALE_SAMPLE(const uint8_t pRawSample) {
+        const static float mScale = 1.0 / ((1 << 8) - 1);
+        const float        mRange = pRawSample * mScale;
+        return mRange * 2.0 - 1.0;
+    }
+
+    template <>
+    float klang::NodeVCOWavetableT<int8_t>::SCALE_SAMPLE(const int8_t pRawSample) {
+        const static float mScale  = 1.0 / ((1 << 8) - 1);
+        const float        mSampleOffset = pRawSample + (1 << 7);
+        const float        mRange  = mSampleOffset * mScale;
+        return mRange * 2.0 - 1.0;
+    }
+
+    template <>
+    float klang::NodeVCOWavetableT<uint16_t>::SCALE_SAMPLE(const uint16_t pRawSample) {
+        const static float mScale = 1.0 / ((1 << 16) - 1);
+        const float        mRange = pRawSample * mScale;
+        return mRange * 2.0 - 1.0;
+    }
+
+    template <>
+    float klang::NodeVCOWavetableT<int16_t>::SCALE_SAMPLE(const int16_t pRawSample) {
+        const static float mScale  = 1.0 / ((1 << 16) - 1);
+        const float        mSampleOffset = pRawSample + (1 << 15);
+        const float        mRange  = mSampleOffset * mScale;
+        return mRange * 2.0 - 1.0;
+    }
+
+    template <>
+    uint8_t klang::NodeVCOWavetableT<uint8_t>::SCALE_WAVETABLE(const float pRawSample) {
+        static const float mScale = ((1 << 8) - 1) / 2.0;
+        return pRawSample * mScale + mScale;
+    }
+
+    template <>
+    int8_t klang::NodeVCOWavetableT<int8_t>::SCALE_WAVETABLE(const float pRawSample) {
+        static const float mScale = ((1 << 8) - 1) / 2.0;
+        return pRawSample * mScale - 0.5;
+    }
+
+    template <>
+    uint16_t klang::NodeVCOWavetableT<uint16_t>::SCALE_WAVETABLE(const float pRawSample) {
+        static const float mScale = ((1 << 16) - 1) / 2.0;
+        return pRawSample * mScale + mScale;
+    }
+
+    template <>
+    int16_t klang::NodeVCOWavetableT<int16_t>::SCALE_WAVETABLE(const float pRawSample) {
+        static const float mScale = ((1 << 16) - 1) / 2.0;
+        return pRawSample * mScale - 0.5;
+    }
+
+    using NodeVCOWavetableUI8  = NodeVCOWavetableT<uint8_t>;
+    using NodeVCOWavetableI8   = NodeVCOWavetableT<int8_t>;
+    using NodeVCOWavetableUI16 = NodeVCOWavetableT<uint16_t>;
+    using NodeVCOWavetableI16  = NodeVCOWavetableT<int16_t>;
+    using NodeVCOWavetableF32  = NodeVCOWavetableT<float>;
+    using NodeVCOWavetable     = NodeVCOWavetableT<SIGNAL_TYPE>;
 }  // namespace klang
 
 #endif /* NodeVCOWavetable_hpp */

@@ -1,9 +1,21 @@
-//
-//  NodeEnvelope.hpp
-//  Klang – a node+text-based synthesizer library
-//
-//
-//
+/*
+ * Klang – a node+text-based synthesizer library
+ *
+ * This file is part of the *wellen* library (https://github.com/dennisppaul/wellen).
+ * Copyright (c) 2022 Dennis P Paul.
+ *
+ * This library is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /**
  *       [ NODE_ENVELOPE       ]
@@ -25,11 +37,10 @@
 namespace klang {
     class EnvelopeStage {
     public:
-        EnvelopeStage(float pDuration, float pValue) : duration(pDuration), value(pValue) {}
-        EnvelopeStage(float pValue) : duration(0.0), value(pValue) {}
-        EnvelopeStage() {}
-        float duration = 0.0;
-        float value    = 0.0;
+        EnvelopeStage(float pDurationMillis, float pValue) : duration_ms(pDurationMillis), value(pValue) {}
+        EnvelopeStage() : duration_ms(0.0), value(0.0) {}
+        float duration_ms;
+        float value;
     };
 
     class NodeEnvelope : public Node {
@@ -113,16 +124,12 @@ namespace klang {
             return mEnvelopeStages;
         }
 
-        void add_stage(float pDuration, float pValue) {
-            add_stage_ms(pDuration * M_TIME_SCALE, pValue);
-        }
-
         void add_stage_ms(float pDuration, float pValue) {
             mEnvelopeStages.push_back(EnvelopeStage(pDuration, pValue));
         }
 
-        void add_stage(float pValue) {
-            add_stage_ms(0.0, pValue);
+        void add_stage(float pDuration, float pValue) {
+            add_stage_ms(pDuration * M_TIME_SCALE, pValue);
         }
 
         void clear_stages() {
@@ -131,6 +138,7 @@ namespace klang {
 
         void start() {
             mEnvelopeDone = false;
+            mValue        = mStartValue;
             prepareNextStage(0);
         }
 
@@ -152,6 +160,18 @@ namespace klang {
 
         SIGNAL_TYPE get_value_scale() {
             return mValueScale;
+        }
+
+        void set_start_value(SIGNAL_TYPE pStartValue) {
+            mStartValue = pStartValue;
+        }
+
+        SIGNAL_TYPE get_start_value() {
+            return mStartValue;
+        }
+
+        void set_loop(bool pLoop) {
+            fLoop = pLoop;
         }
 
         void set_command(KLANG_CMD_TYPE pCommand, KLANG_CMD_TYPE* pPayLoad) {
@@ -190,12 +210,14 @@ namespace klang {
         std::vector<EnvelopeStage> mEnvelopeStages;
 
         uint16_t    mEnvStage       = 0;
+        float       mStartValue     = 0.0;
         float       mValue          = 0.0;
         float       mDelta          = 0.0;
         float       mTimeScale      = 1.0;
         float       mValueScale     = 1.0;
         float       mStageDuration  = 0.0;
         bool        mEnvelopeDone   = true;
+        bool        fLoop           = false;
         SIGNAL_TYPE mPreviousSample = mThreshold;
 
         inline SIGNAL_TYPE kernel(const SIGNAL_TYPE s) {
@@ -203,13 +225,16 @@ namespace klang {
                 if (mEnvStage < mEnvelopeStages.size()) {
                     mValue += mTimeScale * mDelta;
                     mStageDuration += mTimeScale * KLANG_AUDIO_RATE_UINT16_FRAC_INV;
-                    if (mStageDuration > mEnvelopeStages[mEnvStage].duration) {
+                    if (mStageDuration > mEnvelopeStages[mEnvStage].duration_ms) {
                         mEnvStage++;
-                        if (mEnvStage < mEnvelopeStages.size() - 1) {
+                        if (mEnvStage < mEnvelopeStages.size()) {
                             prepareNextStage(mEnvStage);
                         } else {
-                            // @TODO(is it of interest to be able to loop envelopes?)
-                            stop();
+                            if (fLoop) {
+                                start();
+                            } else {
+                                stop();
+                            }
                         }
                     }
                 }
@@ -222,15 +247,14 @@ namespace klang {
         void prepareNextStage(uint16_t pEnvStage) {
             mEnvStage      = pEnvStage;
             mStageDuration = 0.0;
-            mValue         = mEnvelopeStages[mEnvStage].value;
-            if (mEnvelopeStages.size() > 1) {
+            if (mEnvelopeStages.size() > 0) {
                 setDelta(mEnvStage);
             }
         }
 
         void setDelta(uint16_t pEnvStage) {
-            const float mDeltaTMP = mEnvelopeStages[pEnvStage + 1].value - mEnvelopeStages[pEnvStage].value;
-            mDelta                = compute_delta_fraction(mDeltaTMP, mEnvelopeStages[mEnvStage].duration);
+            const float mTotalDelta = mEnvelopeStages[pEnvStage].value - mValue;
+            mDelta                  = compute_delta_fraction(mTotalDelta, mEnvelopeStages[mEnvStage].duration_ms);
         }
 
         float compute_delta_fraction(const float pDelta, const float pDuration) {
@@ -243,9 +267,9 @@ namespace klang {
         }
 
         const SIGNAL_TYPE evaluateEdge(const SIGNAL_TYPE pPreviousSample, const SIGNAL_TYPE pCurrentSample) {
-            if ((pPreviousSample < mThreshold) && (pCurrentSample > mThreshold)) {
+            if ((pPreviousSample <= mThreshold) && (pCurrentSample > mThreshold)) {
                 return RAMP_RISING_EDGE;
-            } else if ((pPreviousSample > mThreshold) && (pCurrentSample < mThreshold)) {
+            } else if ((pPreviousSample >= mThreshold) && (pCurrentSample < mThreshold)) {
                 return RAMP_FALLING_EDGE;
             } else {
                 return RAMP_NO_EDGE;

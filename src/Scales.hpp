@@ -1,9 +1,23 @@
-//
-//  Scales.hpp
-//  Klang – a node+text-based synthesizer library
-//
-//
-//
+/*
+ * Klang – a node+text-based synthesizer library
+ *
+ * This file is part of the *wellen* library (https://github.com/dennisppaul/wellen).
+ * Copyright (c) 2022 Dennis P Paul.
+ *
+ * This library is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+// @TODO(move to strom)
 
 #ifndef Scales_hpp
 #define Scales_hpp
@@ -45,7 +59,7 @@ namespace klang {
         static const uint8_t ID_DIMINISHED       = 11;
         static const uint8_t NUM_OF_SCALES       = 12;
 
-        static const std::vector<SCALE_TYPE> get(const uint8_t pScaleID) {
+        static const std::vector<SCALE_TYPE>& get(const uint8_t pScaleID) {
             switch (pScaleID) {
                 case ID_CHROMATIC:
                     return CHROMATIC;
@@ -75,7 +89,7 @@ namespace klang {
             return CHROMATIC;
         }
 
-        static int note(const std::vector<SCALE_TYPE> pScales, const int pBaseNote, const int pNoteStepOffset) {
+        static int note(const std::vector<SCALE_TYPE>& pScales, const int pBaseNote, const int pNoteStepOffset) {
             if (pNoteStepOffset > 0) {
                 const int mSize       = (int)pScales.size();
                 const int mOctave     = pNoteStepOffset / mSize;

@@ -1,9 +1,21 @@
-//
-//  NodeMixerMulti.hpp
-//  Klang – a node+text-based synthesizer library
-//
-//
-//
+/*
+ * Klang – a node+text-based synthesizer library
+ *
+ * This file is part of the *wellen* library (https://github.com/dennisppaul/wellen).
+ * Copyright (c) 2022 Dennis P Paul.
+ *
+ * This library is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /**
  *       [ NODE_MIXER_MULTI    ]
@@ -70,7 +82,7 @@ namespace klang {
                     }
                 }
 
-                const float mInverseSigCounter = 1.0 / mSignalInputCounter;
+                // const float mInverseSigCounter = 1.0 / mSignalInputCounter;
                 for (uint16_t i = 0; i < KLANG_SAMPLES_PER_AUDIO_BLOCK; ++i) {
                     float sum = 0.0;
                     for (uint8_t j = 0; j < mNumberOfChannels; ++j) {
@@ -79,7 +91,8 @@ namespace klang {
                             sum += s;
                         }
                     }
-                    pAudioBlock[i] = sum * mInverseSigCounter;
+                    pAudioBlock[i] = sum;
+                    // pAudioBlock[i] = sum * mInverseSigCounter;
                 }
 
                 for (uint8_t i = 0; i < mNumberOfChannels; ++i) {

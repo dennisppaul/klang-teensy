@@ -1,9 +1,21 @@
-//
-//  KlangDefines.hpp
-//  Klang – a node+text-based synthesizer library
-//
-//
-//
+/*
+ * Klang – a node+text-based synthesizer library
+ *
+ * This file is part of the *wellen* library (https://github.com/dennisppaul/wellen).
+ * Copyright (c) 2022 Dennis P Paul.
+ *
+ * This library is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #ifndef KlangDefines_hpp
 #define KlangDefines_hpp
@@ -52,12 +64,23 @@
 
 /* --- CONSTANTS --- */
 
-#define TRUE                  1
-#define FALSE                 0
+#ifndef TRUE
+#define TRUE 1
+#endif
+#ifndef FALSE
+#define FALSE 0
+#endif
 #define OSC_DEFAULT_FREQUENCY 220.0
 #define OSC_DEFAULT_AMPLITUDE 0.75
 #define SIGNAL_TYPE_FLOAT     1
 #define SIGNAL_TYPE_INT16     2
+
+#ifndef KLST_ARCH_MCU
+#define KLST_ARCH_MCU 1
+#endif
+#ifndef KLST_ARCH_CPU
+#define KLST_ARCH_CPU 2
+#endif
 
 /* --- TOOLS --- */
 

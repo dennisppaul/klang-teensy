@@ -1,7 +1,7 @@
 #! /bin/zsh
 
 M_PATH=`pwd`
-KLST_ARDUINO_SRC_PATH=../klangstrom/klangstrom/platforms/klangstrom-arduino/libraries/Klangstrom/src/
+KLST_ARDUINO_SRC_PATH=../klangstrom/klangstrom/platforms/klangstrom-arduino/libraries/Klang
 M_SRC_PATH=src
 M_TEMPLATE_PATH=template
 
@@ -15,11 +15,12 @@ mkdir -p "$M_SRC_PATH"
 
 echo "### copying source files from klangstrom project"
 
-cp -r "$KLST_ARDUINO_SRC_PATH" "$M_SRC_PATH"
+cp -r "$KLST_ARDUINO_SRC_PATH/include"/ "$M_SRC_PATH"
+cp -r "$KLST_ARDUINO_SRC_PATH/src"/ "$M_SRC_PATH"
 
 echo "### cleaning up source files"
 
-rm "$M_SRC_PATH"/Klangstrom.h
+# rm "$M_SRC_PATH"/Klangstrom.h
 
 echo "### copying template files"
 

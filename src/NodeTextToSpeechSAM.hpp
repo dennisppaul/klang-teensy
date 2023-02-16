@@ -1,9 +1,21 @@
-//
-//  NodeTextToSpeechSAM.hpp
-//  Klang – a node+text-based synthesizer library
-//
-//
-//
+/*
+ * Klang – a node+text-based synthesizer library
+ *
+ * This file is part of the *wellen* library (https://github.com/dennisppaul/wellen).
+ * Copyright (c) 2022 Dennis P Paul.
+ *
+ * This library is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /**
  *       [ NODE_TTS_SAM        ]
@@ -27,7 +39,8 @@
 
 using namespace std;
 
-char* buffer;
+extern char*    SAM_buffer;
+extern uint32_t SAM_buffer_max_length;
 
 namespace klang {
     class NodeTextToSpeechSAM : public Node {
@@ -38,15 +51,23 @@ namespace klang {
         NodeTextToSpeechSAM() : NodeTextToSpeechSAM(65536) {}
 
         NodeTextToSpeechSAM(uint32_t pBufferLength) {
-            buffer = new char[pBufferLength];
-            set_pitch(64);
-            set_throat(128);
-            set_speed(72);
-            set_mouth(128);
+            SAM_buffer            = new char[pBufferLength];
+            SAM_buffer_max_length = pBufferLength;
+            fAllocatedBuffer      = true;
+            setDefaults();
+        }
+
+        NodeTextToSpeechSAM(char* pBuffer, uint32_t pBufferLength) {
+            SAM_buffer            = pBuffer;
+            SAM_buffer_max_length = pBufferLength;
+            fAllocatedBuffer      = false;
+            setDefaults();
         }
 
         ~NodeTextToSpeechSAM() {
-            delete[] buffer;
+            if (fAllocatedBuffer) {
+                delete[] SAM_buffer;
+            }
         }
 
         bool connect(Connection* pConnection, CHANNEL_ID pInChannel) { return false; }
@@ -108,6 +129,17 @@ namespace klang {
             speak(s);
         }
 
+        void speak_again() {
+            mDoneSpeaking = false;
+            mCounter      = 0;
+        }
+
+        void speak_buffer(string pText, bool pUsePhonemes = false) {
+            speak(pText, pUsePhonemes);
+            mDoneSpeaking = true;
+            mCounter      = get_used_buffer_length() - 1;
+        }
+
         uint32_t get_used_buffer_length() {
             return GetBufferLength() / 50;
         }
@@ -115,7 +147,7 @@ namespace klang {
         void update(CHANNEL_ID pChannel, SIGNAL_TYPE* pAudioBlock) {
             if (pChannel == CH_OUT_SIGNAL) {
                 uint8_t*       mBuffer       = (uint8_t*)GetBuffer();
-                const uint32_t mBufferLength = GetBufferLength() / 50;
+                const uint32_t mBufferLength = get_used_buffer_length();
                 for (uint16_t i = 0; i < KLANG_SAMPLES_PER_AUDIO_BLOCK; i += 2) {
                     if (!mDoneSpeaking && mBufferLength > 0) {
                         pAudioBlock[i] = mBuffer[mCounter] / 255.0 * 2.0 - 1.0;
@@ -140,8 +172,16 @@ namespace klang {
         uint8_t mMouth;
         uint8_t mSpeed;
 
-        uint32_t mCounter      = 0;
-        bool     mDoneSpeaking = false;
+        uint32_t mCounter         = 0;
+        bool     mDoneSpeaking    = false;
+        bool     fAllocatedBuffer = false;
+
+        void setDefaults() {
+            set_pitch(64);
+            set_throat(128);
+            set_speed(72);
+            set_mouth(128);
+        }
     };
 }  // namespace klang
 

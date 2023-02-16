@@ -1,9 +1,21 @@
-//
-//  NodePatch.hpp
-//  Klang – a node+text-based synthesizer library
-//
-//
-//
+/*
+ * Klang – a node+text-based synthesizer library
+ *
+ * This file is part of the *wellen* library (https://github.com/dennisppaul/wellen).
+ * Copyright (c) 2022 Dennis P Paul.
+ *
+ * This library is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /**
  *       [ NODE_PATCH          ]
@@ -13,6 +25,8 @@
  *       |                     |
  *       +---------------------+
  */
+
+// @TODO implement `NodePatchStereo` and `NodePatchMulti` for multiple in- and outputs
 
 /**
  *       [ NODE_PATCH_STEREO   ]
@@ -34,7 +48,6 @@
  *       |                     |
  *       +---------------------+
  */
-// @TODO implement `NodePatchStereo` and `NodePatchMulti` for multiple in- and outputs
 
 #ifndef NodePatch_hpp
 #define NodePatch_hpp
@@ -46,12 +59,6 @@ namespace klang {
     public:
         static const CHANNEL_ID NUM_CH_IN  = 1;
         static const CHANNEL_ID NUM_CH_OUT = 1;
-
-        void setup() {
-            // @TODO("get rid of this method call … but constructor does not work … yet")
-            Klang::connect(input(), Node::CH_OUT_SIGNAL, *this, Node::CH_IN_SIGNAL);
-            Klang::connect(*this, Node::CH_OUT_SIGNAL, output(), Node::CH_IN_SIGNAL);
-        }
 
         bool connect(Connection* pConnection, CHANNEL_ID pInChannel) {
             if (pInChannel == CH_IN_SIGNAL) {

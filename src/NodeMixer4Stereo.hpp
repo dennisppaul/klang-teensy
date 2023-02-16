@@ -1,9 +1,21 @@
-//
-//  NodeMixer4Stereo.hpp
-//  Klang – a node+text-based synthesizer library
-//
-//
-//
+/*
+ * Klang – a node+text-based synthesizer library
+ *
+ * This file is part of the *wellen* library (https://github.com/dennisppaul/wellen).
+ * Copyright (c) 2022 Dennis P Paul.
+ *
+ * This library is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /**
  *       [ NODE_MIXER4_STEREO  ]
@@ -16,6 +28,7 @@
  *       |                     |
  *       +---------------------+
  */
+
 // @TODO(implement `PAN`, `MIX` as INPUTs)
 
 #ifndef NodeMixer4Stereo_hpp
@@ -132,7 +145,6 @@ namespace klang {
                 SIGNAL_TYPE* mBlockData_CH_OUT_SIGNAL_LEFT  = AudioBlockPool::instance().data(mBlock_CH_OUT_SIGNAL_LEFT);
                 SIGNAL_TYPE* mBlockData_CH_OUT_SIGNAL_RIGHT = AudioBlockPool::instance().data(mBlock_CH_OUT_SIGNAL_RIGHT);
 
-                // @todo(this should range from [-1.0...1.0] and not from [0.0...1.0])
                 const float mPan0 = mPan[SIGNAL_CHANNEL::SIGNAL_0] * 0.5 + 0.5;
                 const float mPan1 = mPan[SIGNAL_CHANNEL::SIGNAL_1] * 0.5 + 0.5;
                 const float mPan2 = mPan[SIGNAL_CHANNEL::SIGNAL_2] * 0.5 + 0.5;
@@ -146,7 +158,6 @@ namespace klang {
                 const float pR3   = mPan3;
                 const float pL3   = 1.0 - mPan3;
 
-                const float mRatio = 1.0 / mSignalInputCounter;
                 for (uint16_t i = 0; i < KLANG_SAMPLES_PER_AUDIO_BLOCK; ++i) {
                     float sL = 0.0;
                     float sR = 0.0;
@@ -173,17 +184,17 @@ namespace klang {
                     mBlockData_CH_OUT_SIGNAL_LEFT[i]  = sL;
                     mBlockData_CH_OUT_SIGNAL_RIGHT[i] = sR;
 
-#ifndef KLST_USE_DSP
-                    mBlockData_CH_OUT_SIGNAL_LEFT[i] *= mRatio;
-                    mBlockData_CH_OUT_SIGNAL_RIGHT[i] *= mRatio;
-#endif
+// #ifndef KLST_USE_DSP
+//                     mBlockData_CH_OUT_SIGNAL_LEFT[i] *= mRatio;
+//                     mBlockData_CH_OUT_SIGNAL_RIGHT[i] *= mRatio;
+// #endif
                 }
 
-#ifdef KLST_USE_DSP
-                //                 arm_offset_f32	(mBlockData_CH_OUT_SIGNAL_LEFT, [[add value]], mBlockData_CH_OUT_SIGNAL_LEFT, KLANG_SAMPLES_PER_AUDIO_BLOCK);
-                arm_scale_f32(mBlockData_CH_OUT_SIGNAL_LEFT, mRatio, mBlockData_CH_OUT_SIGNAL_LEFT, KLANG_SAMPLES_PER_AUDIO_BLOCK);
-                arm_scale_f32(mBlockData_CH_OUT_SIGNAL_RIGHT, mRatio, mBlockData_CH_OUT_SIGNAL_RIGHT, KLANG_SAMPLES_PER_AUDIO_BLOCK);
-#endif
+// #ifdef KLST_USE_DSP
+//                 //                 arm_offset_f32	(mBlockData_CH_OUT_SIGNAL_LEFT, [[add value]], mBlockData_CH_OUT_SIGNAL_LEFT, KLANG_SAMPLES_PER_AUDIO_BLOCK);
+//                 arm_scale_f32(mBlockData_CH_OUT_SIGNAL_LEFT, mRatio, mBlockData_CH_OUT_SIGNAL_LEFT, KLANG_SAMPLES_PER_AUDIO_BLOCK);
+//                 arm_scale_f32(mBlockData_CH_OUT_SIGNAL_RIGHT, mRatio, mBlockData_CH_OUT_SIGNAL_RIGHT, KLANG_SAMPLES_PER_AUDIO_BLOCK);
+// #endif
                 AudioBlockPool::instance().release(mBlock_SIGNAL_0);
                 AudioBlockPool::instance().release(mBlock_SIGNAL_1);
                 AudioBlockPool::instance().release(mBlock_SIGNAL_2);
