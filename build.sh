@@ -6,6 +6,7 @@ M_SRC_PATH=src
 M_TEMPLATE_PATH=template
 
 echo "###"
+
 echo "### cleaning up source folder"
 
 if [ -d "$M_SRC_PATH" ]; then
@@ -15,12 +16,7 @@ mkdir -p "$M_SRC_PATH"
 
 echo "### copying source files from klangstrom project"
 
-cp -r "$KLST_ARDUINO_SRC_PATH/include"/ "$M_SRC_PATH"
-cp -r "$KLST_ARDUINO_SRC_PATH/src"/ "$M_SRC_PATH"
-
-echo "### cleaning up source files"
-
-# rm "$M_SRC_PATH"/Klangstrom.h
+cp -r "$KLST_ARDUINO_SRC_PATH/src/" "$M_SRC_PATH"
 
 echo "### copying template files"
 
