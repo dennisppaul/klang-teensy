@@ -113,7 +113,7 @@ namespace klang {
         // static SIGNAL_TYPE mAudioBlocks[KLANG_AUDIO_BLOCKS][KLANG_SAMPLES_PER_AUDIO_BLOCK] __attribute__ ((section(".audio_block_buffer"))); // or make this global
         // SIGNAL_TYPE mAudioBlocks[KLANG_AUDIO_BLOCKS][KLANG_SAMPLES_PER_AUDIO_BLOCK];
         // @TODO(removed `inline` not sure why it was there in the first place.)
-        SIGNAL_TYPE mAudioBlocks[KLANG_AUDIO_BLOCKS][KLANG_SAMPLES_PER_AUDIO_BLOCK]
+        inline static SIGNAL_TYPE mAudioBlocks[KLANG_AUDIO_BLOCKS][KLANG_SAMPLES_PER_AUDIO_BLOCK]
 #if (KLST_ARCH == KLST_ARCH_MCU)
             __attribute__((section(".audio_block_buffer")))
         // @TODO(moved memory to RAM_D3 (0x38000000). not really happy about this plattform specificness at this point)
